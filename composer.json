@@ -1,0 +1,21 @@
+{
+    "name": "speedwork/cache",
+    "type": "library",
+    "description": "Provides easy to use caching for Speedwork applications, built on top of the doctrine/cache package",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sankar Suda",
+            "email": "sankar.suda@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4",
+        "doctrine/cache": "~1.0"
+    },
+    "autoload" : {
+        "psr-4": { "Speedwork\\Cache\\": "src" }
+    },
+    "minimum-stability": "dev",
+    "preferred-install": "dist"
+}
