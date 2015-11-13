@@ -15,11 +15,12 @@ use Doctrine\Common\Cache\Cache;
 use Speedwork\Container\Container;
 use Speedwork\Container\ServiceProvider;
 
-class CacheServiceProvider implements ServiceProvider
+class CacheServiceProvider extends ServiceProvider
 {
     public function register(Container $di)
     {
-        $di['cache.factory'] = function ($options) {
+        $di['cache.factory'] = $di->protect(function ($options) {
+
             return function () use ($options) {
                 if (is_callable($options['driver'])) {
                     $cache = $options['driver']();
@@ -49,7 +50,7 @@ class CacheServiceProvider implements ServiceProvider
                     }
                 }
 
-                $class       = new \ReflectionClass($driverClass);
+                $class = new \ReflectionClass($driverClass);
                 $constructor = $class->getConstructor();
 
                 $newInstanceArguments = [];
@@ -83,19 +84,11 @@ class CacheServiceProvider implements ServiceProvider
                     $cache->setNamespace($options['namespace']);
                 }
 
+                return new CacheNamespace($cache);
+
                 return $cache;
             };
-        };
-
-        $di['cache.namespace'] = function ($name, Cache $cache = null) use ($di) {
-            return function () use ($di, $name, $cache) {
-                if (null === $cache) {
-                    $cache = $di['cache'];
-                }
-
-                return new CacheNamespace($name, $cache);
-            };
-        };
+        });
 
         $di['cache'] = function ($di) {
             $factory = $di['cache.factory']($di['cache.options']['default']);

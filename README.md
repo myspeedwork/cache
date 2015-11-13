@@ -4,7 +4,7 @@ This service provider for Speedwork uses the Cache classes from [Doctrine
 Common][] to provide a `cache` service to a Speedwork application, and
 other service providers.
 
-[Doctrine Common]: https://github.com/doctrine/common
+[Doctrine Cache]: https://github.com/doctrine/cache
 
 ## Install
 
