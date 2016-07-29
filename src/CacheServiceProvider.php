@@ -11,7 +11,15 @@
 
 namespace Speedwork\Cache;
 
+use Doctrine\Common\Cache\ApcuCache;
+use Doctrine\Common\Cache\ArrayCache;
 use Doctrine\Common\Cache\Cache;
+use Doctrine\Common\Cache\FilesystemCache;
+use Doctrine\Common\Cache\MemcacheCache;
+use Doctrine\Common\Cache\MemcachedCache;
+use Doctrine\Common\Cache\MongoDBCache;
+use Doctrine\Common\Cache\RedisCache;
+use Doctrine\Common\Cache\XcacheCache;
 use Speedwork\Container\Container;
 use Speedwork\Container\ServiceProvider;
 
@@ -19,87 +27,138 @@ class CacheServiceProvider extends ServiceProvider
 {
     public function register(Container $di)
     {
-        $di['cache.factory'] = $di->protect(function ($options) {
+        $di['cache.factory'] = $di->protect(function ($options, $di) {
 
-            return function () use ($options) {
-                if (is_callable($options['driver'])) {
-                    $cache = $options['driver']();
-
-                    if (!$cache instanceof Cache) {
-                        throw new \UnexpectedValueException(sprintf(
-                            '"%s" does not implement \\Doctrine\\Common\\Cache\\Cache', get_class($cache)
-                        ));
-                    }
-
-                    return $cache;
+            if (is_callable($options['driver'])) {
+                $cache = $options['driver']();
+            } else {
+                switch ($options['driver']) {
+                    case 'redis':
+                        $cache = $di['cache.driver.redis']($options);
+                        break;
+                    case 'memcache':
+                        $cache = $di['cache.driver.memcache']($options);
+                        break;
+                    case 'memcached':
+                        $cache = $di['cache.driver.memcached']($options);
+                        break;
+                    case 'file':
+                        $cache = $di['cache.driver.file']($options);
+                        break;
+                    case 'apc':
+                        $cache = $di['cache.driver.apc']();
+                        break;
+                    case 'xcache':
+                        $cache = $di['cache.driver.xcache']();
+                        break;
+                    case 'array':
+                        $cache = $di['cache.driver.array']();
+                        break;
+                    case 'mongodb':
+                        $cache = $di['cache.driver.mongodb']($options);
+                        break;
                 }
+            }
 
-                # If the driver name appears to be a fully qualified class name, then use
-                # it verbatim as driver class. Otherwise look the driver up in Doctrine's
-                # builtin cache providers.
-                if (substr($options['driver'], 0, 1) === '\\') {
-                    $driverClass = $options['driver'];
-                } else {
-                    $driverClass = '\\Doctrine\\Common\\Cache\\'
-                        .str_replace(' ', '', ucwords(str_replace('_', ' ', $options['driver']))).'Cache';
+            if (!$cache instanceof Cache) {
+                throw new \UnexpectedValueException(sprintf(
+                    '"%s" does not implement \\Doctrine\\Common\\Cache\\Cache', get_class($cache)
+                ));
+            }
 
-                    if (!class_exists($driverClass)) {
-                        throw new \InvalidArgumentException(sprintf(
-                            'Driver "%s" (%s) not found.', $options['driver'], $driverClass
-                        ));
-                    }
-                }
+            if (isset($options['namespace']) and is_callable([$cache, 'setNamespace'])) {
+                $cache->setNamespace($options['namespace']);
+            }
 
-                $class = new \ReflectionClass($driverClass);
-                $constructor = $class->getConstructor();
+            return new CacheNamespace($cache);
+        });
 
-                $newInstanceArguments = [];
+        $di['cache.driver.memcached'] = $di->protect(function ($options) {
 
-                if (null !== $constructor) {
-                    foreach ($constructor->getParameters() as $parameter) {
-                        if (isset($options[$parameter->getName()])) {
-                            $value = $options[$parameter->getName()];
-                        } else {
-                            $value = $parameter->getDefaultValue();
-                        }
+            $options = array_merge(['server' => '127.0.0.1', 'port' => 11211], $options);
 
-                        $newInstanceArguments[] = $value;
-                    }
-                }
+            $memcached = new \Memcached();
+            $memcached->addServer($options['server'], $options['port']);
 
-                // Workaround for PHP 5.3.3 bug #52854 <https://bugs.php.net/bug.php?id=52854>
-                if (count($newInstanceArguments) > 0) {
-                    $cache = $class->newInstanceArgs($newInstanceArguments);
-                } else {
-                    $cache = $class->newInstanceArgs();
-                }
+            $cacheDriver = new MemcachedCache();
+            $cacheDriver->setMemcached($memcached);
 
-                if (!$cache instanceof Cache) {
-                    throw new \UnexpectedValueException(sprintf(
-                        '"%s" does not implement \\Doctrine\\Common\\Cache\\Cache', $driverClass
-                    ));
-                }
+            return $cacheDriver;
+        });
 
-                if (isset($options['namespace']) and is_callable([$cache, 'setNamespace'])) {
-                    $cache->setNamespace($options['namespace']);
-                }
+        $di['cache.driver.memcache'] = $di->protect(function ($options) {
 
-                return new CacheNamespace($cache);
+            $options = array_merge(['server' => '127.0.0.1', 'port' => 11211], $options);
 
-                return $cache;
-            };
+            $memcache = new \Memcache();
+            $memcache->connect($options['server'], $options['port']);
+
+            $cacheDriver = new MemcacheCache();
+            $cacheDriver->setMemcache($memcache);
+
+            return $cacheDriver;
+        });
+
+        $di['cache.driver.file'] = $di->protect(function ($options) {
+
+            if (empty($options['cache_dir']) || false === is_dir($options['cache_dir'])) {
+                throw new \InvalidArgumentException(
+                    'You must specify "cache_dir" for Filesystem.'
+                );
+            }
+
+            return new FilesystemCache($options['cache_dir']);
+        });
+
+        $di['cache.driver.redis'] = $di->protect(function ($options) {
+
+            $options = array_merge(['host' => '127.0.0.1', 'port' => 6379], $options);
+
+            $redis = new \Redis();
+            $redis->connect($options['host'], $options['port']);
+
+            $cacheDriver = new RedisCache();
+            $cacheDriver->setRedis($redis);
+
+            return $cacheDriver;
+        });
+
+        $di['cache.driver.mongodb'] = $di->protect(function ($options) {
+            if (empty($options['server'])
+                || empty($options['name'])
+                || empty($options['collection'])
+            ) {
+                throw new \InvalidArgumentException(
+                    'You must specify "server", "name" and "collection" for MongoDB.'
+                );
+            }
+            $client = new \MongoClient($options['server']);
+            $db = new \MongoDB($client, $options['name']);
+            $collection = new \MongoCollection($db, $options['collection']);
+
+            return new MongoDBCache($collection);
+        });
+
+        $di['cache.driver.array'] = $di->protect(function () {
+            return new ArrayCache();
+        });
+
+        $di['cache.driver.apc'] = $di->protect(function () {
+            return new ApcuCache();
+        });
+
+        $di['cache.xcache'] = $di->protect(function () {
+            return new XcacheCache();
         });
 
         $di['cache'] = function ($di) {
-            $factory = $di['cache.factory']($di['cache.options']['default']);
-
-            return $factory();
+            return $di['cache.factory']($di['cache.options']['default'], $di);
         };
 
         if (is_array($di['cache.options'])) {
             foreach ($di['cache.options'] as $cache => $options) {
                 $di['cache.'.$cache] = function () use ($options, $di) {
-                    return $di['cache.factory']($options);
+                    return $di['cache.factory']($options, $di);
                 };
             }
         }

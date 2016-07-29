@@ -84,9 +84,9 @@ $app->register(new \Speedwork\Cache\CacheServiceProvider, array(
 ));
 ```
 
-All caches (including the default) are then available via the `caches`
+All caches (including the default) are then available via the `cache`
 service:
 
 ```php
-$app['caches.file']->save('foo', 'bar');
+$app['cache.file']->save('foo', 'bar');
 ```
