@@ -6,8 +6,9 @@
  * @link http://github.com/speedwork
  *
  * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code
+ * file that was distributed with this source code.
  */
+
 namespace Speedwork\Cache;
 
 use Doctrine\Common\Cache\ApcuCache;
@@ -27,6 +28,7 @@ class CacheServiceProvider extends ServiceProvider
     public function register(Container $di)
     {
         $di['cache.factory'] = $di->protect(function ($options, $di) {
+
             if (is_callable($options['driver'])) {
                 $cache = $options['driver']();
             } else {
@@ -72,10 +74,13 @@ class CacheServiceProvider extends ServiceProvider
         });
 
         $di['cache.driver.memcached'] = $di->protect(function ($options) {
-            $options = array_merge(['server' => '127.0.0.1', 'port' => 11211], $options);
 
+            $servers = $options['servers'];
             $memcached = new \Memcached();
-            $memcached->addServer($options['server'], $options['port']);
+
+            foreach ($servers as $server) {
+                $memcached->addServer($server['host'], $server['port']);
+            }
 
             $cacheDriver = new MemcachedCache();
             $cacheDriver->setMemcached($memcached);
@@ -84,10 +89,11 @@ class CacheServiceProvider extends ServiceProvider
         });
 
         $di['cache.driver.memcache'] = $di->protect(function ($options) {
-            $options = array_merge(['server' => '127.0.0.1', 'port' => 11211], $options);
+
+            $options = array_merge(['host' => '127.0.0.1', 'port' => 11211], $options);
 
             $memcache = new \Memcache();
-            $memcache->connect($options['server'], $options['port']);
+            $memcache->connect($options['host'], $options['port']);
 
             $cacheDriver = new MemcacheCache();
             $cacheDriver->setMemcache($memcache);
@@ -96,16 +102,18 @@ class CacheServiceProvider extends ServiceProvider
         });
 
         $di['cache.driver.file'] = $di->protect(function ($options) {
-            if (empty($options['cache_dir']) || false === is_dir($options['cache_dir'])) {
+
+            if (empty($options['path']) || false === is_dir($options['path'])) {
                 throw new \InvalidArgumentException(
-                    'You must specify "cache_dir" for Filesystem.'
+                    'You must specify "path" for Filesystem.'
                 );
             }
 
-            return new FilesystemCache($options['cache_dir']);
+            return new FilesystemCache($options['path']);
         });
 
         $di['cache.driver.redis'] = $di->protect(function ($options) {
+
             $options = array_merge(['host' => '127.0.0.1', 'port' => 6379], $options);
 
             $redis = new \Redis();
@@ -145,12 +153,22 @@ class CacheServiceProvider extends ServiceProvider
             return new XcacheCache();
         });
 
-        $di['cache'] = function ($di) {
-            return $di['cache.factory']($di['cache.options']['default'], $di);
+        $default   = $this->getSettings('cache.default');
+        $stores    = $this->getSettings('cache.stores', 'cache.options');
+        $namespace = $this->getSettings('cache.namespace');
+
+        $default = $default ?: 'default';
+        $default = $stores[$default];
+        $default = array_merge(['namespace' => $namespace], $default);
+
+        $di['cache'] = function ($di) use ($default) {
+            return $di['cache.factory']($default, $di);
         };
 
-        if (is_array($di['cache.options'])) {
-            foreach ($di['cache.options'] as $cache => $options) {
+        if (is_array($stores)) {
+            foreach ($stores as $cache => $options) {
+                $options = array_merge(['namespace' => $namespace], $options);
+
                 $di['cache.'.$cache] = function () use ($options, $di) {
                     return $di['cache.factory']($options, $di);
                 };
