@@ -6,9 +6,8 @@
  * @link http://github.com/speedwork
  *
  * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
+ * file that was distributed with this source code
  */
-
 namespace Speedwork\Cache;
 
 use Doctrine\Common\Cache\ApcuCache;
@@ -28,7 +27,6 @@ class CacheServiceProvider extends ServiceProvider
     public function register(Container $di)
     {
         $di['cache.factory'] = $di->protect(function ($options, $di) {
-
             if (is_callable($options['driver'])) {
                 $cache = $options['driver']();
             } else {
@@ -74,7 +72,6 @@ class CacheServiceProvider extends ServiceProvider
         });
 
         $di['cache.driver.memcached'] = $di->protect(function ($options) {
-
             $options = array_merge(['server' => '127.0.0.1', 'port' => 11211], $options);
 
             $memcached = new \Memcached();
@@ -87,7 +84,6 @@ class CacheServiceProvider extends ServiceProvider
         });
 
         $di['cache.driver.memcache'] = $di->protect(function ($options) {
-
             $options = array_merge(['server' => '127.0.0.1', 'port' => 11211], $options);
 
             $memcache = new \Memcache();
@@ -100,7 +96,6 @@ class CacheServiceProvider extends ServiceProvider
         });
 
         $di['cache.driver.file'] = $di->protect(function ($options) {
-
             if (empty($options['cache_dir']) || false === is_dir($options['cache_dir'])) {
                 throw new \InvalidArgumentException(
                     'You must specify "cache_dir" for Filesystem.'
@@ -111,7 +106,6 @@ class CacheServiceProvider extends ServiceProvider
         });
 
         $di['cache.driver.redis'] = $di->protect(function ($options) {
-
             $options = array_merge(['host' => '127.0.0.1', 'port' => 6379], $options);
 
             $redis = new \Redis();
