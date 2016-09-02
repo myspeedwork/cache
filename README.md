@@ -1,4 +1,14 @@
 # Cache Service Provider
+====================================================
+[![codecov](https://codecov.io/gh/speedwork/cache/branch/master/graph/badge.svg)](https://codecov.io/gh/speedwork/cache)
+[![StyleCI](https://styleci.io/repos/46114739/shield)](https://styleci.io/repos/46114739)
+[![Latest Stable Version](https://poser.pugx.org/speedwork/cache/v/stable)](https://packagist.org/packages/speedwork/cache)
+[![Latest Unstable Version](https://poser.pugx.org/speedwork/cache/v/unstable)](https://packagist.org/packages/speedwork/cache)
+[![License](https://poser.pugx.org/speedwork/cache/license)](https://packagist.org/packages/speedwork/cache)
+[![Total Downloads](https://poser.pugx.org/speedwork/cache/downloads)](https://packagist.org/packages/speedwork/cache)
+[![Build status](https://ci.appveyor.com/api/projects/status/10aw52t4ga4kek27?svg=true)](https://ci.appveyor.com/project/2stech/cache)
+[![Build Status](https://travis-ci.org/speedwork/cache.svg?branch=master)](https://travis-ci.org/speedwork/cache)
+
 
 This service provider for Speedwork uses the Cache classes from [Doctrine
 Common][] to provide a `cache` service to a Speedwork application, and
