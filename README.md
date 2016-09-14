@@ -2,6 +2,7 @@
 ====================================================
 [![codecov](https://codecov.io/gh/speedwork/cache/branch/master/graph/badge.svg)](https://codecov.io/gh/speedwork/cache)
 [![StyleCI](https://styleci.io/repos/46114739/shield)](https://styleci.io/repos/46114739)
+[![SensioLabsInsight](https://insight.sensiolabs.com/projects/963c85a1-f887-450b-9bf0-9446b8e0f467/mini.png)](https://insight.sensiolabs.com/projects/963c85a1-f887-450b-9bf0-9446b8e0f467)
 [![Latest Stable Version](https://poser.pugx.org/speedwork/cache/v/stable)](https://packagist.org/packages/speedwork/cache)
 [![Latest Unstable Version](https://poser.pugx.org/speedwork/cache/v/unstable)](https://packagist.org/packages/speedwork/cache)
 [![License](https://poser.pugx.org/speedwork/cache/license)](https://packagist.org/packages/speedwork/cache)
