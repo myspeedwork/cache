@@ -135,10 +135,11 @@ class CacheServiceProvider extends ServiceProvider
     protected function factory(Container $app)
     {
         $app['cache.factory'] = $app->protect(function ($options, $app) {
-            if (is_callable($options['driver'])) {
+            $driver = $options['driver'];
+            if ($driver != 'file' && is_callable($driver)) {
                 $cache = $options['driver']();
             } else {
-                switch ($options['driver']) {
+                switch ($driver) {
                     case 'redis':
                         $cache = $app['cache.driver.redis']($options);
                         break;
