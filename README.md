@@ -21,13 +21,13 @@ other service providers.
 
 If you haven't got composer:
 
-    % wget http://getcomposer.org/composer.phar
-
+    ```shell
+    $ wget http://getcomposer.org/composer.phar
+    ````
 Add `speedwork/cache` to your `composer.json`:
-
-    % php composer.phar require speedwork/cache:dev-master
-
-## Usage
+```shell
+    $ php composer.phar require speedwork/cache
+```
 
 ### Configuration
 
@@ -94,6 +94,7 @@ $app->register(new \Speedwork\Cache\CacheServiceProvider, array(
     )
 ));
 ```
+## Usage
 
 All caches (including the default) are then available via the `cache`
 service:

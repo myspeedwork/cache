@@ -34,12 +34,12 @@ class CacheNamespace
 
     public function remember($key, \closure $callable, $lifeTime = 0)
     {
-        if ($this->contains($key)) {
-            return $this->fetch($key);
+        if ($this->cache->contains($key)) {
+            return $this->cache->fetch($key);
         }
         $data = $callable();
 
-        $this->save($key, $data, $lifeTime);
+        $this->cache->save($key, $data, $lifeTime);
 
         return $data;
     }
